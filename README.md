@@ -11,8 +11,7 @@ docker run --rm -v $(pwd):/zap/wrk/:rw -t ictu/zap2docker-weekly zap-baseline.py
    --hook=/zap/auth_hook.py \ 
   -z "auth.loginurl=https://demo.website.net/login/index.php \
       auth.username="admin" \
-      auth.password="sandbox" \
-      auth.auto=1"
+      auth.password="sandbox"
 ```
 
 2. Running a full scan (active) with manual authentication
