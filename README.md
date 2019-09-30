@@ -38,7 +38,6 @@ Note: exclude URL's are comma separated regular expressions. Examples:
 # Parameters
 
 ```
-auth.auto                 Automatically try to find the login fields (username, password, submit)
 auth.loginurl             The URL to the login page
 auth.username             A valid username
 auth.password             A valid password

@@ -23,6 +23,7 @@ RUN cd /opt && \
 
 RUN pip2 install selenium
 RUN pip2 install pyvirtualdisplay
+RUN pip2 install cryptography
 
 # Support for using the deprecated version
 COPY zap-baseline-custom.py /zap/

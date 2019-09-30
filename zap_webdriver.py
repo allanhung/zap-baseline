@@ -3,6 +3,7 @@ import string
 import os
 import time
 import urllib
+from cryptography.fernet import Fernet
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -12,7 +13,7 @@ from pyvirtualdisplay import Display
 
 class ZapWebdriver:
     def __init__(self):
-        self.auth_auto = False
+        self.auth_key = 'RvivOR8btMLOCM0T8G4w8c3PuLniLmmXz1dsVOoXC8M='
         self.auth_display = False
         self.auth_loginUrl = ''
         self.auth_username = ''
@@ -31,11 +32,13 @@ class ZapWebdriver:
     def load_from_extra_zap_params(self, port, extra_zap_params):
         self.extra_zap_params = extra_zap_params
         self.zap_port = port
-        self.auth_auto = self._get_zap_param_boolean('auth.auto')
         self.auth_display = self._get_zap_param_boolean('auth.display')
         self.auth_loginUrl = self._get_zap_param('auth.loginurl')
         self.auth_username = self._get_zap_param('auth.username')
         self.auth_password = self._get_zap_param('auth.password')
+        self.auth_password = (Fernet(self.auth_key.encode()).decrypt(self.auth_password.encode())).decode()
+#        self._set_zap_param('auth.password', (Fernet(self.auth_key.encode()).decrypt(self.auth_password.encode())).decode())
+#        self.auth_password = self._get_zap_param('auth.password')
         self.auth_username_field_name = self._get_zap_param('auth.username_field')
         self.auth_password_field_name = self._get_zap_param('auth.password_field')
         self.auth_submit_field_name = self._get_zap_param('auth.submit_field')
@@ -43,11 +46,12 @@ class ZapWebdriver:
         self.auth_excludeUrls = list(filter(None, self._get_zap_param('auth.exclude').split(',')))
         
         logging.info ('load_from_extra_zap_params port ' + str(self.zap_port))
-        logging.info ('load_from_extra_zap_params auth_auto ' + str(self.auth_auto))
         logging.info ('load_from_extra_zap_params auth_display ' + str(self.auth_display))
         logging.info ('load_from_extra_zap_params auth_loginUrl ' + self.auth_loginUrl)
         logging.info ('load_from_extra_zap_params auth_username ' + self.auth_username)
-        logging.info ('load_from_extra_zap_params auth_password ' + self.auth_password)
+#        logging.info ('load_from_extra_zap_params auth_password ' + self.auth_password)
+        # mask password
+        logging.info ('load_from_extra_zap_params auth_password ' + ''.rjust(len(self.auth_password),'*'))
         logging.info ('load_from_extra_zap_params auth_username_field_name ' + self.auth_username_field_name)
         logging.info ('load_from_extra_zap_params auth_password_field_name ' + self.auth_password_field_name)
         logging.info ('load_from_extra_zap_params auth_submit_field_name ' + self.auth_submit_field_name)
@@ -55,7 +59,7 @@ class ZapWebdriver:
         logging.info ('load_from_extra_zap_params auth_excludeUrls ' + ''.join(self.auth_excludeUrls))
 
     def setup_zap_context(self, zap, target):
-        logging.info('Setup a new context for target' + target)
+        logging.info('Setup a new context for target ' + target)
         
         # create a new context
         contextName = 'auth'
@@ -103,10 +107,7 @@ class ZapWebdriver:
 
         self.driver.get(self.auth_loginUrl)
 
-        if self.auth_auto:
-            self.auto_login(zap, target)
-        else:
-            self.normal_login(zap, target)
+        self.auto_login(zap, target)
 
         logging.info('Create an authenticated session')
 
@@ -125,50 +126,63 @@ class ZapWebdriver:
         logging.info('Active session: ' + zap.httpsessions.active_session(target))
 
     def auto_login(self, zap, target):
-        logging.info('Automatically finding login fields')
 
         if self.auth_username:
-            # find username field
-            userField = self.driver.find_element_by_xpath("(//input[(@type='text' and contains(@name,'ser')) or @type='text'])[1]")
-            userField.clear()
-            userField.send_keys(self.auth_username)
+            if self.auth_username_field_name:
+                userField = self.find_element(self.auth_username_field_name, None)
+                userField.clear()
+                userField.send_keys(self.auth_username)
+            else:    
+                # find username field
+                logging.info('Automatically finding username field')
+                userField = self.driver.find_element_by_xpath("(//input[(@type='text' and contains(@name,'ser')) or @type='text'])[1]")
+                userField.clear()
+                userField.send_keys(self.auth_username)
 
         # find password field
         try:
             if self.auth_password:
-                passField = self.driver.find_element_by_xpath("//input[@type='password' or contains(@name,'ass')]")
-                passField.clear()
-                passField.send_keys(self.auth_password)
+                if self.auth_password_field_name:
+                    passwordField = self.find_element(self.auth_password_field_name, None)
+                    passwordField.clear()
+                    passwordField.send_keys(self.auth_password)
+                else:
+                    logging.info('Automatically finding password field')
+                    passField = self.driver.find_element_by_xpath("//input[@type='password' or contains(@name,'ass')]")
+                    passField.clear()
+                    passField.send_keys(self.auth_password)
 
-            sumbitField = self.driver.find_element_by_xpath("//*[(translate(@name, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='login' and (@type='submit' or @type='button')) or @type='submit' or @type='button']")
-            sumbitField.click()
+            if self.auth_submit_field_name:
+                self.find_element(self.auth_submit_field_name, "//input[@type='submit']").click()
+            else:    
+                logging.info('Automatically finding submit field')
+                sumbitField = self.driver.find_element_by_xpath("//*[(translate(@name, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='login' and (@type='submit' or @type='button' or @type='login')) or @type='submit' or @type='button'or @type='login']")
+                sumbitField.click()
         except:
             logging.info('Did not find password field - auth in 2 steps')
             # login in two steps
-            sumbitField = self.driver.find_element_by_xpath("//*[(translate(@name, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='login' and (@type='submit' or @type='button')) or @type='submit' or @type='button']")
-            sumbitField.click()
+            if self.auth_first_submit_field_name:
+                self.find_element(self.auth_first_submit_field_name, "//input[@type='submit']").click()
+            else:
+                logging.info('Automatically finding first submit field')
+                sumbitField = self.driver.find_element_by_xpath("//*[(translate(@name, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='login' and (@type='submit' or @type='button' or @type='login')) or @type='submit' or @type='button'or @type='login']")
+                sumbitField.click()
             if self.auth_password:
-                passField = self.driver.find_element_by_xpath("//input[@type='password' or contains(@name,'ass')]")
-                passField.clear()
-                passField.send_keys(self.auth_password)
-            sumbitField = self.driver.find_element_by_xpath("//*[(translate(@name, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='login' and (@type='submit' or @type='button')) or @type='submit' or @type='button']")
-            sumbitField.click()
-
-    def normal_login(self, zap, target):
-        if self.auth_username_field_name:
-            userField = self.find_element(self.auth_username_field_name, None)
-            userField.clear()
-            userField.send_keys(self.auth_username)
-
-        if self.auth_first_submit_field_name:
-            self.find_element(self.auth_first_submit_field_name, "//input[@type='submit']").click()
-
-        if self.auth_password_field_name:
-            passwordField = self.find_element(self.auth_password_field_name, None)
-            passwordField.clear()
-            passwordField.send_keys(self.auth_password)
-
-        self.find_element(self.auth_submit_field_name, "//input[@type='submit']").click()
+                if self.auth_password_field_name:
+                    passwordField = self.find_element(self.auth_password_field_name, None)
+                    passwordField.clear()
+                    passwordField.send_keys(self.auth_password)
+                else:    
+                    logging.info('Automatically finding password field')
+                    passField = self.driver.find_element_by_xpath("//input[@type='password' or contains(@name,'ass')]")
+                    passField.clear()
+                    passField.send_keys(self.auth_password)
+            if self.auth_submit_field_name:
+                self.find_element(self.auth_submit_field_name, "//input[@type='submit']").click()
+            else:    
+                logging.info('Automatically finding submit field')
+                sumbitField = self.driver.find_element_by_xpath("//*[(translate(@name, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='login' and (@type='submit' or @type='button' or @type='login')) or @type='submit' or @type='button'or @type='login']")
+                sumbitField.click()
 
     def find_element(self, name, xpath):
         element = None
@@ -194,12 +208,17 @@ class ZapWebdriver:
 
     def _get_zap_param(self, key):
         for param in self.extra_zap_params:
-            if param.find(key) > -1:
+            if param.find(key+'=') > -1:
                 return param[len(key) + 1:]
         return ''
-        
+
+    def _set_zap_param(self, key, value):
+        for i, param in enumerate(self.extra_zap_params):
+            if param.find(key+'=') > -1:
+                self.extra_zap_params[i] = param.replace(param[len(key) + 1:], value)
+
     def _get_zap_param_boolean(self, key):
         for param in self.extra_zap_params:
-            if param.find(key) > -1:
+            if param.find(key+'=') > -1:
                 return param[len(key) + 1:] in ['1', 'True', 'true']
         return False
