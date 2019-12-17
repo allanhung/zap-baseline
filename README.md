@@ -5,28 +5,28 @@ With the new [hook mechanism](https://github.com/zaproxy/zaproxy/issues/4925) in
 
 1. Running a baseline scan (passive) and automatic authentication
 ```
-docker run --rm -v $(pwd):/zap/wrk/:rw -t ictu/zap2docker-weekly zap-baseline.py \
+docker run --rm -v $(pwd):/zap/wrk/:rw -t allanhung/zap2docker-weekly zap-baseline.py \
   -t https://demo.website.net \
   -r testreport.html \
    --hook=/zap/auth_hook.py \ 
-  -z "auth.loginurl=https://demo.website.net/login/index.php \
-      auth.username="admin" \
-      auth.password="sandbox"
+  -z "-config auth.loginurl=https://demo.website.net/login/index.php \
+      -config auth.username="admin" \
+      -config auth.password="sandbox"
 ```
 
 2. Running a full scan (active) with manual authentication
 ```
-docker run --rm -v $(pwd):/zap/wrk/:rw -t ictu/zap2docker-weekly zap-full-scan.py \
+docker run --rm -v $(pwd):/zap/wrk/:rw -t allanhung/zap2docker-weekly zap-full-scan.py \
   -t https://demo.website.net \
   -r testreport.html \
    --hook=/zap/auth_hook.py \
-  -z "auth.loginurl=https://demo.website.net/login/index.php \
-      auth.username="admin" \
-      auth.password="sandbox" \
-      auth.username_field="j_username" \
-      auth.password_field="j_password" \
-      auth.submit_field="submit" \
-      auth.exclude=".*logout.*,\Qhttp://url.com/logout\E.*"
+  -z '-config auth.loginurl="https://demo.website.net/login/index.php" \
+      -config auth.username="admin" \
+      -config auth.password="sandbox" \
+      -config auth.username_field="j_username" \
+      -config auth.password_field="j_password" \
+      -config auth.submit_field="submit" \
+      -config auth.exclude=".*logout.*,\Qhttp://url.com/logout\E.*"'
 ```
 
 Note: exclude URL's are comma separated regular expressions. Examples:

@@ -6,6 +6,7 @@ LABEL maintainer="Dick Snel <dick.snel@ictu.nl>"
 USER root
 
 # Install Selenium compatible firefox
+RUN apt-get update && apt-get -y install vim
 RUN apt-get -y remove firefox
 
 RUN cd /opt && \
@@ -29,6 +30,7 @@ RUN pip2 install cryptography
 COPY zap-baseline-custom.py /zap/
 COPY auth_hook.py /zap/
 COPY zap_webdriver.py /zap/
+COPY zap_encrypt.py /zap/
 
 RUN chown zap:zap /zap/zap-baseline-custom.py  && \
 		chown zap:zap /zap/auth_hook.py && \

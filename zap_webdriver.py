@@ -62,7 +62,8 @@ class ZapWebdriver:
         logging.info('Setup a new context for target ' + target)
         
         # create a new context
-        contextName = 'auth'
+        #contextName = 'auth'
+        contextName = 'Default Context'
         zap.context.new_context(contextName)
         
         # include everything below the target
@@ -82,7 +83,7 @@ class ZapWebdriver:
 
         # set the context in scope
         zap.context.set_context_in_scope(contextName, True)
-        zap.context.set_context_in_scope('Default Context', False)
+        #zap.context.set_context_in_scope('Default Context', False)
 
     def setup_webdriver(self, zap, target):
         logging.info ('Setup proxy for webdriver')
