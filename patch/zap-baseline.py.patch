@@ -1,0 +1,12 @@
+--- a/zap-baseline.py
++++ b/zap-baseline.py
+@@ -411,7 +411,8 @@
+ 
+             if report_html:
+                 # Save the report
+-                write_report(base_dir + report_html, zap.core.htmlreport())
++                #write_report(base_dir + report_html, zap.core.htmlreport())
++                write_python_report(alert_dict, '/zap/patch/rpt_template.html.j2', base_dir + report_html)
+ 
+             if report_json:
+                 # Save the report

@@ -1,0 +1,105 @@
+--- a/zap_common.py
++++ b/zap_common.py
+@@ -36,6 +36,7 @@
+ from random import randint
+ from six.moves.urllib.request import urlopen
+ from six import binary_type
++from jinja2 import Template
+ 
+ try:
+     import pkg_resources
+@@ -221,6 +222,76 @@
+     return trigger_hook('print_rules_wrap', count, inprog_count)
+ 
+ 
++def read_template(filename):
++    result=[]
++    with open(filename, 'r') as f:
++        result = f.read().splitlines()
++    return result
++
++
++def render_template(template_str, template_dict, output_file):
++    output_str = Template(template_str).render(template_dict) if template_dict else template_str
++    # to save the results
++    if output_file:
++        directory = os.path.dirname(output_file)
++        if not os.path.exists(directory):
++            os.makedirs(directory)
++        with open(output_file, "wb") as f:
++            if not isinstance(output_str, binary_type):
++                output_str = output_str.encode('utf-8')
++            f.write(output_str+'\n')
++    else:
++        return output_str
++
++
++def write_python_report(alert_dict, template_file, report):
++    report_dict = {'alerts': [], 'high': 0, 'medium': 0, 'low': 0, 'info': 0}
++    for key, alert_list in sorted(alert_dict.items()):
++        alert_list = sorted(alert_list, key=lambda k: k['name'])
++        tmp_dict = {}
++        alert_name = ""
++        alert_count = 0
++        for i, alert in enumerate(alert_list):
++            if alert_name == alert_list[i]['name']:
++                alert_count += 1
++                tmp_dict['urls'].append({'url': alert['url'], 'method': alert['method'], 'evidence': alert['evidence']})
++            else:
++                if alert_name:
++                    tmp_dict['instances']=alert_count
++                    report_dict['alerts'].append(tmp_dict)
++                    tmp_dict = {}
++                    alert_count = 0
++                alert_count += 1
++                alert_name = alert_list[i]['name']
++                if alert_list[i]['risk'].lower() == 'high':
++                    report_dict['high']+=1
++                    tmp_dict['sort_key']=0
++                elif alert_list[i]['risk'].lower() == 'medium':
++                    report_dict['medium']+=1
++                    tmp_dict['sort_key']=1
++                elif alert_list[i]['risk'].lower() == 'low':
++                    report_dict['low']+=1
++                    tmp_dict['sort_key']=2
++                elif alert_list[i]['risk'].lower() == 'informational':
++                    report_dict['info']+=1
++                    tmp_dict['sort_key']=3
++                tmp_dict['plugin_id']=key
++                tmp_dict['risk']=alert_list[i]['risk']
++                tmp_dict['name']=alert_list[i]['name']
++                tmp_dict['description']=alert_list[0]['description']
++                tmp_dict['urls']=[{'url': alert['url'], 'method': alert['method'], 'evidence': alert['evidence']}]
++                tmp_dict['solution']=alert_list[i]['solution']
++                tmp_dict['other']=alert_list[i]['other']
++                tmp_dict['reference']=alert_list[i]['reference']
++                tmp_dict['cweid']=alert_list[i]['cweid']
++                tmp_dict['wascid']=alert_list[i]['wascid']
++                tmp_dict['sourceid']=alert_list[i]['sourceid']
++        tmp_dict['instances']=alert_count
++        report_dict['alerts'].append(tmp_dict)
++    report_dict['alerts'] = sorted(report_dict['alerts'], key=lambda k: k['sort_key'])
++    return render_template('\n'.join(read_template(template_file)),report_dict,report)
++
++
+ def inc_ignore_rules(config_dict, key, inc_extra):
+     return (key in config_dict) and config_dict[key] == 'IGNORE'
+ 
+@@ -491,10 +562,15 @@
+             if plugin_id in ignore_scan_rules:
+                 continue
+             if not is_in_scope(plugin_id, alert.get('url'), out_of_scope_dict):
++                # delete alert that set in out of scope
++                #logging.info('Deleting alert plugin_id [' + plugin_id + '] url [' + alert.get('url') + ']' )
++                #delete_result = zap.core.delete_alert(alert.get('id'))
++                #logging.info('Delete id: '+ alert.get('id') + ' result: '+delete_result)
+                 continue
+-            if alert.get('risk') == 'Informational':
++            # show Informational alerts
++            #if alert.get('risk') == 'Informational':
+                 # Ignore all info alerts - some of them may have been downgraded by security annotations
+-                continue
++                #continue
+             if (plugin_id not in alert_dict):
+                 alert_dict[plugin_id] = []
+             alert_dict[plugin_id].append(alert)

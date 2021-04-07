@@ -1,0 +1,36 @@
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -5,6 +5,8 @@
+ 
+ USER root
+ 
++RUN apt-get update && apt-get -y install vim patch
++
+ RUN mkdir /zap/wrk \
+ 	&& cd /opt \
+ 	&& wget -qO- -O geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/v0.29.0/geckodriver-v0.29.0-linux64.tar.gz \
+@@ -15,6 +17,24 @@
+ 
+ ADD . /zap/
+ 
++RUN patch -p1 < /zap/patch/requirements.patch
++RUN patch -p1 < /zap/patch/zap-baseline.py.patch
++RUN patch -p1 < /zap/patch/zap_auth.py.patch
++RUN patch -p1 < /zap/patch/zap_common.py.patch
++RUN patch -p1 < /zap/patch/zap_config.py.patch
++
++# debug
++#COPY patch/log4j.properties /home/zap/.ZAP_D/log4j.properties
++
++# retirejs
++# RUN cd /zap/plugin && wget https://raw.githubusercontent.com/h3xstream/burp-retire-js/gh-pages/releases/zap/retirejs-alpha-3.0.2.zap
++RUN cd /zap/plugin && wget https://github.com/zaproxy/zap-extensions/releases/download/retire-v0.7.0/retire-release-0.7.0.zap
++#COPY retirejs-alpha-3.jar /zap/plugin/retirejs-alpha-3.0.2.zap
++# DOM XSS Active scanner rule version 10
++RUN cd /zap/plugin && wget https://github.com/zaproxy/zap-extensions/releases/download/domxss-v10/domxss-beta-10.zap
++# Advanced SQLInjection Scanner version 13
++RUN cd /zap/plugin && wget https://github.com/zaproxy/zap-extensions/releases/download/sqliplugin-v13/sqliplugin-beta-13.zap
++
+ ADD scripts /home/zap/.ZAP_D/scripts/scripts/active/
+ RUN chmod 777 /home/zap/.ZAP_D/scripts/scripts/active/
+ 

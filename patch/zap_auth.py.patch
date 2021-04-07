@@ -1,0 +1,11 @@
+--- a/zap_auth.py
++++ b/zap_auth.py
+@@ -24,7 +24,7 @@
+         # Set an X-Scanner header so requests can be identified in logs
+         zap.replacer.add_rule(description = 'Scanner', enabled = True, matchtype = 'REQ_HEADER', matchregex = False, matchstring = 'X-Scanner', replacement = "ZAP")
+ 
+-        context_name = 'ctx-zap-docker'
++        context_name = 'Default Context'
+         context_id = zap.context.new_context(context_name)
+ 
+         zap_common.context_name = context_name

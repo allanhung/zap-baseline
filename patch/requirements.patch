@@ -1,0 +1,7 @@
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -1,2 +1,4 @@
+ PyVirtualDisplay==2.1
+ selenium==3.141.0
++cryptography
++jinja2
