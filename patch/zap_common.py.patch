@@ -29,7 +29,7 @@
 +        with open(output_file, "wb") as f:
 +            if not isinstance(output_str, binary_type):
 +                output_str = output_str.encode('utf-8')
-+            f.write(output_str+'\n')
++            f.write(output_str+'\n'.encode('utf-8'))
 +    else:
 +        return output_str
 +
