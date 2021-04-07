@@ -8,19 +8,19 @@ docker build -t my-zap .
 
 ## Example
 ```bash
-docker run --rm -v $(pwd):/zap/wrk/:rw -t myzap zap-baseline.py -I -j \
-  -c patch/zap.conf
+docker run --rm -v $(pwd)/patch:/zap/wrk/:rw -t myzap zap-baseline.py -I -j \
+  -c zap.conf \
   -t https://demo.website.net \
-  -t https://demo.website.net/cb/pulse/viewers/brandPulse/brandPulseViewer.html?id=462d341a-d797-4b13-bea7-3dcd86d83618 \
+  -t "https://demo.website.net/cb/pulse/viewers/brandPulse/brandPulseViewer.html?id=462d341a-d797-4b13-bea7-3dcd86d83618" \
   -r testreport.html \
    --hook=/zap/auth_hook.py \
-  -z "auth.loginurl=https://demo.website.net/cb/nb/login.html \
-      auth.username="admin" \
-      auth.password="sandbox" \
-      auth.username_field="j_username" \
-      auth.password_field="j_password" \
-      auth.exclude=".*logout.*" \
-      auth.include="https://demo.website.net/cb/nb/.*""
+  -z "auth.loginurl='https://demo.website.net/cb/nb/login.html' \
+      auth.username='admin' \
+      auth.password='sandbox' \
+      auth.username_field='j_username' \
+      auth.password_field='j_password' \
+      auth.exclude='.*logout.*' \
+      auth.include='https://demo.website.net/cb/nb/.*'"
 ```
 
 ## Extra authentication parameters
